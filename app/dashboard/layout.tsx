@@ -10,9 +10,29 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu";
 import { signOut } from "../lib/auth";
 import { requiredUser } from "../lib/hooks";
+import prisma from "../lib/db";
+import { redirect } from "next/navigation";
+
+async function getData(userId: string) {
+    const data = await prisma.user.findUnique({
+        where: {
+            id: userId
+        },
+        select: {
+            userName: true
+        }
+    })
+
+    if (!data?.userName) {
+        return redirect('/onboarding')
+    }
+
+    return data;
+}
 
 export default async function DashboardLayout({ children }: PropsWithChildren) {
-    const session = requiredUser()
+    const session = await requiredUser()
+    const data = await getData(session.user?.id as string);
 
     return (
         <>
@@ -22,7 +42,7 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
                     <div className="flex h-full max-h-screen flex-col gap-2">
                         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                             <Link href={"/"} className="flex flex-row items-center">
-                                <Image src={Logo} alt="Logo" className="size-8 rounded-full" />
+                                <Image src={Logo} alt="Logo" className="size-8 rounded-xl" />
                                 <p className="text-red-600 text-xl font-bold">Blo<span className="text-primary">ooock</span> </p>
                             </Link>
                         </div>
@@ -72,7 +92,7 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
                                             await signOut()
                                         }}>
                                             <button className="w-full text-left">
-                                                LogOut
+                                                로그아웃
                                             </button>
                                         </form>
                                     </DropdownMenuItem>
@@ -81,7 +101,9 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
                             </DropdownMenu>
                         </div>
                     </header>
-                    {children}
+                    <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                        {children}
+                    </main>
                 </div>
             </div>
         </>
